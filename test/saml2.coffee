@@ -28,7 +28,7 @@ describe 'saml2', ->
     # Auth Request, before it is compressed and base-64 encoded
     describe 'create_authn_request', ->
       it 'contains expected fields', ->
-        { id, xml } = saml2.create_authn_request 'https://sp.example.com/metadata.xml', 'https://sp.example.com/assert', 'https://idp.example.com/login'
+        { id, xml } = saml2.create_authn_request 'https://sp.example.com/metadata.xml', 'https://sp.example.com/assert', 'https://idp.example.com/login', false
         dom = (new xmldom.DOMParser()).parseFromString xml
         authn_request = dom.getElementsByTagName('AuthnRequest')[0]
 
@@ -51,7 +51,6 @@ describe 'saml2', ->
         authn_request = dom.getElementsByTagName('AuthnRequest')[0]
 
         requested_authn_context = authn_request.getElementsByTagNameNS('urn:oasis:names:tc:SAML:2.0:protocol', 'RequestedAuthnContext')[0]
-        assert _(requested_authn_context.attributes).some (attr) -> attr.name is 'Comparison' and attr.value is 'exact'
         assert.equal requested_authn_context.getElementsByTagNameNS('urn:oasis:names:tc:SAML:2.0:assertion', 'AuthnContextClassRef')[0].firstChild.data, 'context:class'
 
 
@@ -167,7 +166,7 @@ describe 'saml2', ->
 
     describe 'sign_authn_request_with_embedded_signature', ->
       it 'correctly embeds the signature', ->
-        { id, xml } = saml2.create_authn_request 'https://sp.example.com/metadata.xml', 'https://sp.example.com/assert', 'https://idp.example.com/login'
+        { id, xml } = saml2.create_authn_request 'https://sp.example.com/metadata.xml', 'https://sp.example.com/assert', 'https://idp.example.com/login', false
         signed = saml2.sign_authn_request xml, get_test_file("test.pem")
         result = saml2.check_saml_signature signed, get_test_file("test.crt")
         assert result, 'validation result should not be null'
@@ -370,6 +369,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: [ get_test_file('test.crt'), get_test_file('test2.crt') ]
+        force_authn: false
       request_options =
         request_body:
           SAMLResponse: get_test_file("post_response.xml")
@@ -416,6 +416,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: get_test_file('test.crt')
+        force_authn: false
       request_options =
         allow_unencrypted_assertion: true
         request_body:
@@ -453,6 +454,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: get_test_file('test.crt')
+        force_authn: false
       resquest_options =
         request_body:
           SAMLResponse: 'FAIL'
@@ -475,6 +477,7 @@ describe 'saml2', ->
         sso_logout_url: 'https://idp.example.com/logout'
         certificates: [ get_test_file('test.crt') ]
         allow_unencrypted_assertion: true
+        force_authn: false
       request_options =
         request_body:
           SAMLResponse: get_test_file("response_unsigned_assertion.xml")
@@ -497,6 +500,7 @@ describe 'saml2', ->
         sso_logout_url: 'https://idp.example.com/logout'
         certificates: [ 'INVALIDCERTIFICATEDATA', get_test_file('test.crt') ]
         allow_unencrypted_assertion: true
+        force_authn: false
       request_options =
         request_body:
           SAMLResponse: get_test_file("response_unsigned_assertion.xml")
@@ -521,6 +525,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: [ get_test_file('test.crt'), get_test_file('test2.crt') ]
+        force_authn: false
       request_options =
         ignore_signature: true
         allow_unencrypted_assertion: true
@@ -560,6 +565,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: [ get_test_file('test.crt'), get_test_file('test2.crt') ]
+        force_authn: false
       request_options =
         require_session_index: false
         ignore_signature: true
@@ -600,6 +606,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: [ get_test_file('test.crt'), get_test_file('test2.crt') ]
+        force_authn: false
       request_options =
         request_body:
           SAMLResponse: get_test_file("redirect_response.xml")
@@ -657,6 +664,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: 'other_service_cert'
+        force_authn: false
 
       sp = new saml2.ServiceProvider sp_options
       idp = new saml2.IdentityProvider idp_options
@@ -680,6 +688,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login?partnerid=abcdef1234&random_param=foo'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: 'other_service_cert'
+        force_authn: false
 
       sp = new saml2.ServiceProvider sp_options
       idp = new saml2.IdentityProvider idp_options
@@ -707,6 +716,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: 'other_service_cert'
+        force_authn: false
 
       sp = new saml2.ServiceProvider sp_options
       idp = new saml2.IdentityProvider idp_options
@@ -727,6 +737,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: 'other_service_cert'
+        force_authn: false
       request_options =
         assert_endpoint: 'https://sp.example.com/assert'
         relay_state: 'Some Relay State!'
@@ -753,6 +764,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: 'other_service_cert'
+        force_authn: false
       request_options =
         assert_endpoint: 'https://sp.example.com/assert'
         relay_state: 'Some Relay State!'
@@ -778,6 +790,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: get_test_file('test.crt')
+        force_authn: false
       request_options =
         name_id: 'name_id'
         session_index: 'session_index'
@@ -806,6 +819,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com?action=logout'
         certificates: get_test_file('test.crt')
+        force_authn: false
       request_options =
         name_id: 'name_id'
         session_index: 'session_index'
@@ -833,6 +847,7 @@ describe 'saml2', ->
         assert_endpoint: 'https://sp.example.com/assert'
       idp_options =
         sso_logout_url : 'https://idp.example.com/logout'
+        force_authn: false
       request_options =
         name_id: 'name_id'
         session_index: 'session_index'
@@ -906,6 +921,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: 'other_service_cert'
+        force_authn: false
 
       sp = new saml2.ServiceProvider sp_options
       idp = new saml2.IdentityProvider idp_options
@@ -926,6 +942,7 @@ describe 'saml2', ->
         sso_login_url: 'https://idp.example.com/login'
         sso_logout_url:  'https://idp.example.com/logout'
         certificates: 'other_service_cert'
+        force_authn: false
 
       sp = new saml2.ServiceProvider sp_options
       idp = new saml2.IdentityProvider idp_options
